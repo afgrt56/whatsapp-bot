@@ -22,7 +22,7 @@ const corona = require("covid19-earth");
 const CC = require('currency-converter-lt')
 //const download = require('download');
 const fs = require("fs");
-
+const ytdl = require('ytdl-core');
 
 const client = new Client();
 
