@@ -209,6 +209,28 @@ else if (msg.body.startsWith('.ytp')) {
 
 
 
+    //yputube video download
+    else if (msg.body.startsWith('.ytmp4')) {
+        const groupChat = await msg.getChat();
+        const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+           if (botChatObj.isAdmin){
+            const givelink = msg.body.slice(7);
+
+                try{
+                   ytdl(givelink)
+                   .pipe(fs.createWriteStream('1.webm'));
+                    const file = '1.webm'
+                    const media = MessageMedia.fromFilePath(file);
+                    await msg.reply(media);
+
+                }catch (err) {
+                    console.log('Failed to save the file:', err);
+                }
+           
+               
+          
+           }
+    }
 
 
 
