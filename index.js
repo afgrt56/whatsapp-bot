@@ -27,7 +27,7 @@ const axios = require('axios');
 
 
 
-const apiKey = 'YOUR_OPENAI_API_KEY';
+const apiKey = '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';
 
 // Function to interact with ChatGPT
 async function chatWithGPT(prompt) {
