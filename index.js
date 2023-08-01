@@ -23,11 +23,11 @@ const CC = require('currency-converter-lt')
 //const download = require('download');
 const fs = require("fs");
 const axios = require('axios');
+require('dotenv').config();
 
 
 
-
-const apiKey = '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';
+const apiKey = process.env.API_KEY;
 
 // Function to interact with ChatGPT
 async function chatWithGPT(prompt) {
