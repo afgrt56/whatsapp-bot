@@ -22,7 +22,48 @@ const corona = require("covid19-earth");
 const CC = require('currency-converter-lt')
 //const download = require('download');
 const fs = require("fs");
-const ytdl = require('ytdl-core');
+const axios = require('axios');
+
+
+
+
+const apiKey = 'YOUR_OPENAI_API_KEY';
+
+// Function to interact with ChatGPT
+async function chatWithGPT(prompt) {
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/engines/davinci-codex/completions',
+      {
+        prompt: prompt,
+        max_tokens: 4096,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+      }
+    );
+
+    // Extract the generated text from the response
+    const chatResult = response.data.choices[0].text;
+
+    return chatResult;
+  } catch (error) {
+    console.error('Error calling the API:', error.message);
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
+
 
 const client = new Client();
 
@@ -190,6 +231,28 @@ client.on('message', async msg => {
 
 
 
+    //chatgpt
+    // getting youtube video information
+    else if (msg.body.startsWith('.ch')) {
+        const groupChat = await msg.getChat();
+       const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+          if (botChatObj.isAdmin){
+            const give = msg.body.slice(4);
+            (async () => {
+                const prompt = give;
+                const chatResult = await chatWithGPT(prompt);
+                console.log(chatResult);
+                msg.reply(chatResult)
+              })();
+          
+    
+          }
+    }
+
+
+
+
+
 // thumbnail download
 else if (msg.body.startsWith('.ytp')) {
     const groupChat = await msg.getChat();
@@ -209,28 +272,6 @@ else if (msg.body.startsWith('.ytp')) {
 
 
 
-    //yputube video download
-    else if (msg.body.startsWith('.ytmp4')) {
-        const groupChat = await msg.getChat();
-        const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
-           if (botChatObj.isAdmin){
-            const givelink = msg.body.slice(7);
-
-                try{
-                   ytdl(givelink)
-                   .pipe(fs.createWriteStream('1.webm'));
-                    const file = '1.webm'
-                    const media = MessageMedia.fromFilePath(file);
-                    await msg.reply(media);
-
-                }catch (err) {
-                    console.log('Failed to save the file:', err);
-                }
-           
-               
-          
-           }
-    }
 
 
 
