@@ -22,12 +22,12 @@ const corona = require("covid19-earth");
 const CC = require('currency-converter-lt')
 //const download = require('download');
 const fs = require("fs");
-const axios = require('axios');
-require('dotenv').config();
+const ffmpeg = require('fluent-ffmpeg');
+const path = require('path');
 
 
 
-const apiKey = process.env.API_KEY;
+const apiKey = 'YOUR_OPENAI_API_KEY';
 
 // Function to interact with ChatGPT
 async function chatWithGPT(prompt) {
@@ -160,6 +160,67 @@ client.on('message', async msg => {
 
 
 
+
+
+     //image to sticker
+     else if (msg.body.startsWith('.audio')) {
+        const quotedMsg = await msg.getQuotedMessage();
+        const groupChat = await msg.getChat();
+        const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+        if (botChatObj.isAdmin) {
+            if (quotedMsg.hasMedia) {
+                quotedMsg.downloadMedia().then(media => {
+                    if (media) {
+                        const mediaPath = './downloaded-media/';
+                        if (!fs.existsSync(mediaPath)) {
+                            fs.mkdirSync(mediaPath);
+                        }
+                        const extension = mime.extension(media.mimetype);
+                        const filename = new Date().getTime();
+                        const fullFilename = mediaPath + filename + '.' + extension;
+                        // Save to file
+                        try {
+                            fs.writeFileSync(fullFilename, media.data, { encoding: 'base64' });
+                            console.log('File downloaded successfully!', fullFilename);
+                            console.log(fullFilename);
+    
+                            const inputVideoPath = fullFilename; // Replace with the path to your input video file
+                            const outputAudioPath = './downloaded-media/audio.mp3'; // Replace with the desired output audio file path
+    
+                            // Convert video to audio
+                            ffmpeg(inputVideoPath)
+                                .output(outputAudioPath)
+                                .noVideo()
+                                .audioCodec('libmp3lame')
+                                .on('end', () => {
+                                    console.log('Audio conversion complete!');
+                                    const media = MessageMedia.fromFilePath(outputAudioPath);
+                                    msg.reply(media);
+                                    fs.unlinkSync(fullFilename);
+                                    fs.unlinkSync(outputAudioPath);
+                                    console.log(`Files Deleted successfully!`);
+                                })
+                                .on('error', (err) => {
+                                    console.error('Error during audio conversion:', err.message);
+                                    fs.unlinkSync(fullFilename);
+                                    console.log(`Files Deleted successfully!`);
+                                })
+                                .run();
+                        } catch (err) {
+                            console.log('Failed to save the file:', err);
+                            console.log(`File Deleted successfully!`);
+                        }
+                    }
+                }).catch(err => {
+                    console.error('Error during media download:', err.message);
+                });
+            } else {
+                msg.reply('Please reply to an image...');
+            }
+        }
+    }
+    
+
    
 
 
@@ -179,6 +240,12 @@ client.on('message', async msg => {
             });
           }
     }
+
+
+
+
+
+
 
 
 
@@ -228,27 +295,125 @@ client.on('message', async msg => {
 
 
 
+//storing rdps
+const fs = require('fs');
+const registeredUsersFile = 'registered_users.json';
+function loadRegisteredUsers() {
+  try {
+    const data = fs.readFileSync(registeredUsersFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+}
+function saveRegisteredUsers(users) {
+  fs.writeFileSync(registeredUsersFile, JSON.stringify(users, null, 2));
+}
+function generateId() {
+  const usedIds = new Set(loadRegisteredUsers().map(user => user.id));
+  let id = Math.floor(Math.random() * 1000000) + 1;
+  while (usedIds.has(id)) {
+    id = Math.floor(Math.random() * 1000000) + 1;
+  }
+  return id;
+}
+function registerUser(ram, core, duration, price ,stock) {
+  const users = loadRegisteredUsers();
+  const id = generateId();
+  users.push({ id, ram, core, duration, price, stock}); // Save with modified variable names
+  saveRegisteredUsers(users);
+  console.log(`User ${ram} registered with ID: ${id}`);
+}
+function deleteUser(id) {
+  let users = loadRegisteredUsers();
+  const initialLength = users.length;
+  users = users.filter(user => user.id !== id);
+  if (users.length === initialLength) {
+    console.log(`User with ID ${id} not found.`);
+    return;
+  }
+  saveRegisteredUsers(users);
+  console.log(`User with ID ${id} deleted.`);
+}
 
 
 
-    //chatgpt
-    // getting youtube video information
-    else if (msg.body.startsWith('.ch')) {
-        const groupChat = await msg.getChat();
-       const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
-          if (botChatObj.isAdmin){
-            const give = msg.body.slice(4);
-            (async () => {
-                const prompt = give;
-                const chatResult = await chatWithGPT(prompt);
-                console.log(chatResult);
-                msg.reply(chatResult)
-              })();
-          
-    
+
+
+// rdp
+if (msg.body.startsWith('.addrdp')) {
+    const groupChat = await msg.getChat();
+   const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+      if (botChatObj.isAdmin){
+        const give = msg.body;
+        function parseRegisterCommand(input) {
+            const registerRegex = /\.addrdp\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/;
+            const match = input.match(registerRegex);
+            if (match) {
+              const [, name, email, password, phone, stock] = match;
+              return { name, email, password, phone, stock };
+            }
+            return null;
           }
-    }
+          const inputString = give;
+          const registrationData = parseRegisterCommand(inputString);
+          if (registrationData) {
+            const { name, email, password, phone, stock } = registrationData;
+            console.log('Name:', name);
+            console.log('Email:', email);
+            console.log('Password:', password);
+            console.log('Phone:', phone);
+            console.log('Stock:', stock);
+            registerUser(name,email,password,phone,stock);
+            msg.reply("Rdp add successfully..")
+          } else {
+            console.log('Invalid input format.');
+          }
+          
+        
 
+      }
+}
+
+
+
+//delete rdp
+else if (msg.body.startsWith('.delrdp')) {
+    const groupChat = await msg.getChat();
+   const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+      if (botChatObj.isAdmin){
+        const give = msg.body.slice(8);
+        const idd = parseInt(give)
+        deleteUser(idd)
+        msg.reply('*'+give+'*' + ' RDP deleted successfully..')
+          } else {
+            msg.reply("Invalid ID")
+            console.log('Invalid input format.');
+          }
+      }
+
+
+
+//show all rdp
+//delete rdp
+else if (msg.body.startsWith('.shrdp')) {
+      
+        const chat = await msg.getChat();
+        function listAllUsers() {
+            const users = loadRegisteredUsers();
+            if (users.length === 0) {
+              console.log('No users registered.');
+              msg.reply("No Rdp Available..")
+              return;
+            }
+            console.log('Registered Users:');
+            users.forEach(user => {
+              console.log(`Ram: ${user.ram} \nCore: ${user.core}\nDuration: ${user.duration}\nPrice: ${user.price}\nID: ${user.id}` + "\n"+"-----------");
+              chat.sendMessage(`*Ram:* ${user.ram} \n*Core:* ${user.core}\n*Duration:* ${user.duration}\n*Price:* ${user.price}\n*Stock:* ${user.stock}\n*ID:* ${user.id} ` + "\n\n"+"for buying type *.buy id*")
+            });
+          }
+          listAllUsers()
+      }
 
 
 
