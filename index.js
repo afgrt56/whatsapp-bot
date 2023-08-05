@@ -21,7 +21,7 @@ const tinyurl = require("tinyurl-shorten");
 const corona = require("covid19-earth");
 const CC = require('currency-converter-lt')
 //const download = require('download');
-const fs = require("fs");
+
 const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 
@@ -246,8 +246,102 @@ client.on('message', async msg => {
 
 
 
+//storing phone number
+    const path = require('path');
+    const fs = require("fs");
+    
+    function isPhoneNumberExist(phoneData, phoneNumber) {
+      return phoneData.some((data) => data.phoneNumber === phoneNumber);
+    }
+    
+    function storePhoneNumberAndBalance(phoneNumber, balance) {
+      const data = { phoneNumber, balance };
+      const filePath = path.join(__dirname, 'phone_data.json');
+    
+      fs.readFile(filePath, 'utf8', (err, jsonData) => {
+        let phoneData = [];
+    
+        if (!err) {
+          try {
+            phoneData = JSON.parse(jsonData);
+          } catch (parseError) {
+            console.error('Error parsing existing JSON data:', parseError);
+          }
+        }
+    
+        if (isPhoneNumberExist(phoneData, phoneNumber)) {
+          console.log('Phone number already exists. Data not stored.');
+        } else {
+          phoneData.push(data);
+    
+          fs.writeFile(filePath, JSON.stringify(phoneData, null, 2), (writeErr) => {
+            if (writeErr) {
+              console.error('Error writing to JSON file:', writeErr);
+            } else {
+              console.log('Data stored successfully!');
+            }
+          });
+        }
+      });
+    }
+    
 
 
+
+
+   //storing phone
+   if (msg.body) {
+        const senderNumber = msg.from;
+        const input = senderNumber;
+        const phoneNumberRegex = /(\d+)/;
+        const match = input.match(phoneNumberRegex);
+        if (match && match[1]) {
+        const phoneNumber = match[1];
+        console.log("Phone Number:", phoneNumber);
+        const balance = 0;
+        storePhoneNumberAndBalance(phoneNumber, balance);  
+        } else {
+        console.log("Phone number not found.");
+            }   
+}
+
+
+   //show balance
+   if (msg.body.startsWith('.balance')) {
+    const senderNumber = msg.from;
+    const input = senderNumber;
+    const phoneNumberRegex = /(\d+)/;
+    const match = input.match(phoneNumberRegex);
+    if (match && match[1]) {
+    const phoneNumber = match[1];
+    console.log("Phone Number:", phoneNumber);
+    const chat = await msg.getChat();
+    
+    const inputPhoneNumber = phoneNumber; // The phone number for which you want to check the balance
+function getBalance(phoneNumber) {
+  const data = fs.readFileSync('phone_data.json', 'utf8');
+  const users = JSON.parse(data);
+  const user = users.find((user) => user.phoneNumber === phoneNumber);
+  if (user) {
+    return user.balance;
+  } else {
+    return null;
+  }
+}
+const balance = getBalance(inputPhoneNumber);
+if (balance !== null) {
+  console.log(`Balance for phone number ${inputPhoneNumber}: ${balance}`);
+  msg.reply('*Your current balance is*: '+ balance + " PKR")
+} else {
+  console.log(`Phone number ${inputPhoneNumber} not found.`);
+}
+
+
+
+    } else {
+    console.log("Phone number not found.");
+        }   
+}
 
 
 
@@ -296,7 +390,6 @@ client.on('message', async msg => {
 
 
 //storing rdps
-const fs = require('fs');
 const registeredUsersFile = 'registered_users.json';
 function loadRegisteredUsers() {
   try {
@@ -340,6 +433,125 @@ function deleteUser(id) {
 
 
 
+// subtract balance
+if (msg.body.startsWith('.subbal')) {
+    const groupChat = await msg.getChat();
+   const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+      if (botChatObj.isAdmin){
+        const give = msg.body;
+        const input = give; // Replace this with the input provided by the user
+        function getBalance(phoneNumber) {
+            const data = fs.readFileSync('phone_data.json', 'utf8');
+            const users = JSON.parse(data);
+            const user = users.find((user) => user.phoneNumber === phoneNumber);
+            if (user) {
+              return user.balance;
+            } else {
+              return null;
+            }
+          }
+          function updateBalance(phoneNumber, amount) {
+            const data = fs.readFileSync('phone_data.json', 'utf8');
+            let users = JSON.parse(data);
+            const userIndex = users.findIndex((user) => user.phoneNumber === phoneNumber);
+            if (userIndex !== -1) {
+              users[userIndex].balance += amount;
+              fs.writeFileSync('phone_data.json', JSON.stringify(users, null, 2));
+              return true;
+            } else {
+              return false;
+            }
+          }
+          const parts = input.split(' ');
+          const command = parts[0].toLowerCase();
+          if (command === '.subbal' && parts.length === 3) {
+            const phoneNumber = parts[1];
+            const amount = parseFloat(parts[2]);
+            if (!isNaN(amount)) {
+              const updated = updateBalance(phoneNumber, -amount);
+              if (updated) {
+                console.log(`Balance for phone number ${phoneNumber} updated. New balance: ${getBalance(phoneNumber)}`);
+                msg.reply("Balance for " + phoneNumber +" updated \nnew balance is "+`*${getBalance(phoneNumber)} PKR*`)
+              } else {
+                console.log(`Phone number ${phoneNumber} not found.`);
+                msg.reply(phoneNumber +" not found..")
+              }
+            } else {
+              console.log('Invalid input format. Please provide a valid amount to subtract.');
+            }
+          } else {
+            console.log('Invalid command. Please use the format ".subbal phonenumber amount".');
+          }
+          
+      }
+}
+
+
+
+
+
+
+
+
+
+// update balance
+if (msg.body.startsWith('.upbal')) {
+    const groupChat = await msg.getChat();
+   const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+      if (botChatObj.isAdmin){
+        const give = msg.body;
+        const input = give; // Replace this with the input provided by the user
+function getBalance(phoneNumber) {
+    const data = fs.readFileSync('phone_data.json', 'utf8');
+    const users = JSON.parse(data);
+    const user = users.find((user) => user.phoneNumber === phoneNumber);
+    if (user) {
+      return user.balance;
+    } else {
+      return null;
+    }
+  }
+  function updateBalance(phoneNumber, additionalBalance) {
+    const data = fs.readFileSync('phone_data.json', 'utf8');
+    let users = JSON.parse(data);
+    const userIndex = users.findIndex((user) => user.phoneNumber === phoneNumber);
+    if (userIndex !== -1) {
+      users[userIndex].balance += additionalBalance;
+      fs.writeFileSync('phone_data.json', JSON.stringify(users, null, 2));
+      return true;
+    } else {
+      return false;
+    }
+  }
+  const parts = input.split(' ');
+  const command = parts[0].toLowerCase();
+  if (command === '.upbal' && parts.length === 3) {
+    const phoneNumber = parts[1];
+    const additionalBalance = parseFloat(parts[2]);
+    if (!isNaN(additionalBalance)) {
+      const updated = updateBalance(phoneNumber, additionalBalance);
+      if (updated) {
+        console.log(`Balance for phone number ${phoneNumber} updated. New balance: ${getBalance(phoneNumber)}`);
+        msg.reply("Balance for " + phoneNumber +" updated \nnew balance is "+`*${getBalance(phoneNumber)} PKR*`);
+      } else {
+        console.log(`Phone number ${phoneNumber} not found.`);
+        msg.reply(phoneNumber +" not found..")
+      }
+    } else {
+      console.log('Invalid input format. Please provide a valid balance.');
+    }
+  } else {
+    console.log('Invalid command. Please use the format ".upbal phonenumber balance".');
+  }
+      }
+}
+
+
+
+
+
+
+
 // rdp
 if (msg.body.startsWith('.addrdp')) {
     const groupChat = await msg.getChat();
@@ -369,9 +581,6 @@ if (msg.body.startsWith('.addrdp')) {
           } else {
             console.log('Invalid input format.');
           }
-          
-        
-
       }
 }
 
@@ -395,9 +604,7 @@ else if (msg.body.startsWith('.delrdp')) {
 
 
 //show all rdp
-//delete rdp
 else if (msg.body.startsWith('.shrdp')) {
-      
         const chat = await msg.getChat();
         function listAllUsers() {
             const users = loadRegisteredUsers();
@@ -414,6 +621,138 @@ else if (msg.body.startsWith('.shrdp')) {
           }
           listAllUsers()
       }
+
+
+
+
+
+
+
+      //buy rdp
+else if (msg.body.startsWith('.buy')) {
+    const give = msg.body;
+    const senderNumber = msg.from;
+    const input = senderNumber;
+    const phoneNumberRegex = /(\d+)/;
+    const match = input.match(phoneNumberRegex);
+    if (match && match[1]) {
+    const phoneNumber = match[1];
+    console.log("Phone Number:", phoneNumber);
+    const stockDataFile = 'registered_users.json';
+    const phoneDataFile = 'phone_data.json';
+    const buyingFile = 'buying.json';
+    
+    function loadStockData() {
+      try {
+        const data = fs.readFileSync(stockDataFile, 'utf8');
+        return JSON.parse(data);
+      } catch (err) {
+        return [];
+      }
+    }
+    
+    function loadPhoneData() {
+      try {
+        const data = fs.readFileSync(phoneDataFile, 'utf8');
+        return JSON.parse(data);
+      } catch (err) {
+        return [];
+      }
+    }
+    
+    function saveBuyingData(data) {
+      fs.writeFileSync(buyingFile, JSON.stringify(data, null, 2));
+    }
+    
+    function buyItem(command, phoneNumber) {
+      const [_, id, quantity] = command.match(/\.buy\s+(\d+)\s+(\d+)/);
+    
+      const stockData = loadStockData();
+      const phoneData = loadPhoneData();
+    
+      const itemIndex = stockData.findIndex((item) => item.id === parseInt(id, 10));
+    
+      if (itemIndex === -1) {
+        console.log(`Item with ID ${id} not found.`);
+        return;
+      }
+    
+      const item = stockData[itemIndex];
+    
+      if (item.stock < parseInt(quantity, 10)) {
+        console.log(`Not enough stock for item with ID ${id}.`);
+        msg.reply(`Not enough stock for item with ID ${id}.`)
+        return;
+      }
+    
+      const totalCost = item.price * parseInt(quantity, 10);
+      const phoneIndex = phoneData.findIndex((entry) => entry.phoneNumber === phoneNumber);
+    
+      if (phoneIndex === -1) {
+        console.log(`Phone number ${phoneNumber} not found.`);
+        return;
+      }
+    
+      const phone = phoneData[phoneIndex];
+    
+      if (phone.balance < totalCost) {
+        console.log(`Not enough balance for phone number ${phoneNumber}.`);
+        msg.reply("Not enough balance")
+        return;
+      }
+    
+      // Update the stock quantity
+      stockData[itemIndex].stock -= parseInt(quantity, 10);
+      saveStockData(stockData);
+    
+      // Update the phone balance
+      phoneData[phoneIndex].balance -= totalCost;
+      savePhoneData(phoneData);
+    
+      const purchaseData = {
+        date: new Date().toISOString(),
+        phoneNumber,
+        item,
+        quantity: parseInt(quantity, 10),
+        totalCost,
+        status: 'active'
+      };
+    
+      // Append the purchase data to buying.json
+      const buyingData = loadBuyingData();
+      buyingData.push(purchaseData);
+      saveBuyingData(buyingData);
+    
+      console.log(`Purchase completed successfully.`);
+      msg.reply(`you have successfully bought Item no: *${id}*\n You can check status by *.status id*`)
+    }
+    
+    function loadBuyingData() {
+      try {
+        const data = fs.readFileSync(buyingFile, 'utf8');
+        return JSON.parse(data);
+      } catch (err) {
+        return [];
+      }
+    }
+    
+    function saveStockData(data) {
+      fs.writeFileSync(stockDataFile, JSON.stringify(data, null, 2));
+    }
+    
+    function savePhoneData(data) {
+      fs.writeFileSync(phoneDataFile, JSON.stringify(data, null, 2));
+    }
+    
+    // Example usage with command = '.buy 319032 2' and phoneNumber = '923496985307':
+    buyItem(give, phoneNumber);
+  
+    } else {
+    console.log("Phone number not found.");
+        } 
+    
+  }
+
 
 
 
