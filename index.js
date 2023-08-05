@@ -631,7 +631,7 @@ function printOrders(orders) {
     console.log('Item ID:', order.item.id);
     console.log('Item RAM:', order.item.ram);
     console.log('Item Core:', order.item.core);
-    console.log('Quantity:', order.quantity);
+    console.log('Quantity:', order.item.quantity);
     console.log('Total Cost:', order.totalCost);
     console.log('Status:', order.status);
     console.log('Duration:', order.item.duration);
@@ -652,7 +652,7 @@ function formatDateAndTime(inputDate) {
   const formattedDateTime = formatDateAndTime(inputDateTime);
   console.log(formattedDateTime);
   
-    msg.reply('*Order Detail # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*PhoneNumber:* '+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
+    msg.reply('*Order Detail # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*PhoneNumber:* '+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.item.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
   });
 }
 // Input from the command line arguments
@@ -704,7 +704,7 @@ function printOrders(orders) {
     console.log('Item ID:', order.item.id);
     console.log('Item RAM:', order.item.ram);
     console.log('Item Core:', order.item.core);
-    console.log('Quantity:', order.quantity);
+    console.log('Quantity:', order.item.quantity);
     console.log('Total Cost:', order.totalCost);
     console.log('Status:', order.status);
     console.log('Duration:', order.item.duration);
@@ -724,7 +724,7 @@ function formatDateAndTime(inputDate) {
   // Convert and print the date and time in the desired format
   const formattedDateTime = formatDateAndTime(inputDateTime);
   console.log(formattedDateTime);
-    msg.reply('   *Order Number # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*Phone Number:* +'+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
+    msg.reply('   *Order Number # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*Phone Number:* +'+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.item.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
   });
 }
 // Input from the command line arguments
@@ -862,7 +862,7 @@ else if (msg.body.startsWith('.shrdp')) {
             core: item.core,
             duration: item.duration,
             price: item.price,
-            stock: parseInt(quantity, 10),
+            quantity: parseInt(quantity, 10),
           },
           totalCost,
           status: 'pending'
