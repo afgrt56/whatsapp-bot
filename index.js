@@ -603,6 +603,155 @@ else if (msg.body.startsWith('.delrdp')) {
 
 
 
+
+
+
+
+//to see order of specfic number
+else if (msg.body.startsWith('.order')) {
+    const groupChat = await msg.getChat();
+   const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+      if (botChatObj.isAdmin){
+        const give = msg.body;
+        // Step 1: Parse JSON data
+const jsonData = fs.readFileSync('buying.json');
+const buyingData = JSON.parse(jsonData);
+// Step 2: Function to filter data based on phoneNumber and status
+function findOrderByPhoneNumberAndStatus(phoneNumber, status) {
+  return buyingData.filter(
+    (order) => order.phoneNumber === phoneNumber && order.status === status
+  );
+}
+// Step 3: Function to print the filtered data
+function printOrders(orders) {
+  orders.forEach((order) => {
+    console.log('Order Details:');
+    console.log('Date:', order.date);
+    console.log('PhoneNumber:', order.phoneNumber);
+    console.log('Item ID:', order.item.id);
+    console.log('Item RAM:', order.item.ram);
+    console.log('Item Core:', order.item.core);
+    console.log('Quantity:', order.quantity);
+    console.log('Total Cost:', order.totalCost);
+    console.log('Status:', order.status);
+    console.log('Duration:', order.item.duration);
+    console.log('---------------------------');
+    // Function to convert date and time format
+function formatDateAndTime(inputDate) {
+    const dateObject = new Date(inputDate);
+    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObject.getDate()).padStart(2, '0');
+    const year = dateObject.getFullYear();
+    const time = dateObject.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+    return `${month}-${day}-${year} ${time}`;
+  }
+  // Input date and time in the current format
+  const inputDateTime = order.date;
+  // Convert and print the date and time in the desired format
+  const formattedDateTime = formatDateAndTime(inputDateTime);
+  console.log(formattedDateTime);
+  
+    msg.reply('*Order Detail # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*PhoneNumber:* '+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
+  });
+}
+// Input from the command line arguments
+const input = give;
+const [command, phoneNumber, status] = input.split(' ');
+
+if (command === '.order') {
+  // Find and print the corresponding data
+  const filteredOrders = findOrderByPhoneNumberAndStatus(phoneNumber, status);
+  printOrders(filteredOrders);
+} else {
+  console.log('Invalid command. Please use ".order phonenumber status" format.');
+  msg.reply('Invalid command. Please use ".order phonenumber status" format.')
+}
+          } else {
+            msg.reply("Invalid ID")
+            console.log('Invalid input format.');
+          }
+      }
+
+
+
+
+
+
+
+
+      //to see order of specfic number
+else if (msg.body.startsWith('.allorder')) {
+    const groupChat = await msg.getChat();
+   const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+      if (botChatObj.isAdmin){
+        const give = msg.body;
+        // Step 1: Parse JSON data
+const jsonData = fs.readFileSync('buying.json');
+const buyingData = JSON.parse(jsonData);
+// Step 2: Function to filter data based on phoneNumber and status
+function findOrderByPhoneNumberAndStatus(status) {
+  return buyingData.filter(
+    (order) => order.status === status
+  );
+}
+// Step 3: Function to print the filtered data
+function printOrders(orders) {
+  orders.forEach((order) => {
+    console.log('Order Details:');
+    console.log('Date:', order.date);
+    console.log('PhoneNumber:', order.phoneNumber);
+    console.log('Item ID:', order.item.id);
+    console.log('Item RAM:', order.item.ram);
+    console.log('Item Core:', order.item.core);
+    console.log('Quantity:', order.quantity);
+    console.log('Total Cost:', order.totalCost);
+    console.log('Status:', order.status);
+    console.log('Duration:', order.item.duration);
+    console.log('---------------------------');
+    // Function to convert date and time format
+function formatDateAndTime(inputDate) {
+    const dateObject = new Date(inputDate);
+    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObject.getDate()).padStart(2, '0');
+    const year = dateObject.getFullYear();
+    const time = dateObject.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+    return `${month}-${day}-${year} ${time}`;
+  }
+  // Input date and time in the current format
+  const inputDateTime = order.date;
+  // Convert and print the date and time in the desired format
+  const formattedDateTime = formatDateAndTime(inputDateTime);
+  console.log(formattedDateTime);
+    msg.reply('*Order Detail # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*PhoneNumber:* '+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
+  });
+}
+// Input from the command line arguments
+const input = give;
+const [command, status] = input.split(' ');
+
+if (command === '.allorder') {
+  // Find and print the corresponding data
+  const filteredOrders = findOrderByPhoneNumberAndStatus(status);
+  printOrders(filteredOrders);
+} else {
+  console.log('Invalid command. Please use ".order phonenumber status" format.');
+  msg.reply('Invalid command. Please use ".order status" format.')
+}
+          } else {
+            msg.reply("Invalid ID")
+            console.log('Invalid input format.');
+          }
+      }
+
+
+
+
+
+
+
+
 //show all rdp
 else if (msg.body.startsWith('.shrdp')) {
         const chat = await msg.getChat();
@@ -616,7 +765,7 @@ else if (msg.body.startsWith('.shrdp')) {
             console.log('Registered Users:');
             users.forEach(user => {
               console.log(`Ram: ${user.ram} \nCore: ${user.core}\nDuration: ${user.duration}\nPrice: ${user.price}\nID: ${user.id}` + "\n"+"-----------");
-              chat.sendMessage(`*Ram:* ${user.ram} \n*Core:* ${user.core}\n*Duration:* ${user.duration}\n*Price:* ${user.price}\n*Stock:* ${user.stock}\n*ID:* ${user.id} ` + "\n\n"+"for buying type *.buy id*")
+              chat.sendMessage(`*Ram:* ${user.ram} \n*Core:* ${user.core}\n*Duration:* ${user.duration}\n*Price:* ${user.price} PKR\n*Stock:* ${user.stock}\n*ID:* ${user.id} ` + "\n\n"+"for buying type *.buy id*")
             });
           }
           listAllUsers()
@@ -715,7 +864,7 @@ else if (msg.body.startsWith('.buy')) {
         item,
         quantity: parseInt(quantity, 10),
         totalCost,
-        status: 'active'
+        status: 'pending'
       };
     
       // Append the purchase data to buying.json
