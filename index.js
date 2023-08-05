@@ -724,7 +724,7 @@ function formatDateAndTime(inputDate) {
   // Convert and print the date and time in the desired format
   const formattedDateTime = formatDateAndTime(inputDateTime);
   console.log(formattedDateTime);
-    msg.reply('*Order Detail # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*PhoneNumber:* '+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
+    msg.reply('   *Order Number # '+order.item.id+'*\n\n*Date:* '+formattedDateTime+'\n*Phone Number:* +'+order.phoneNumber+'\n*RAM:* '+order.item.ram+'\n*Core:* '+order.item.core+'\n*Quantity:* '+order.quantity+'\n*Total Cost:* '+order.totalCost+' PKR'+'\n*Duration:* '+order.item.duration+'\n*Status:* '+order.status)
   });
 }
 // Input from the command line arguments
@@ -778,129 +778,139 @@ else if (msg.body.startsWith('.shrdp')) {
 
 
       //buy rdp
-else if (msg.body.startsWith('.buy')) {
-    const give = msg.body;
-    const senderNumber = msg.from;
-    const input = senderNumber;
-    const phoneNumberRegex = /(\d+)/;
-    const match = input.match(phoneNumberRegex);
-    if (match && match[1]) {
-    const phoneNumber = match[1];
-    console.log("Phone Number:", phoneNumber);
-    const stockDataFile = 'registered_users.json';
-    const phoneDataFile = 'phone_data.json';
-    const buyingFile = 'buying.json';
-    
-    function loadStockData() {
-      try {
-        const data = fs.readFileSync(stockDataFile, 'utf8');
-        return JSON.parse(data);
-      } catch (err) {
-        return [];
+      function generateRandomId() {
+        return Math.floor(10000 + Math.random() * 90000); // Generates a random 5-digit number
       }
-    }
-    
-    function loadPhoneData() {
-      try {
-        const data = fs.readFileSync(phoneDataFile, 'utf8');
-        return JSON.parse(data);
-      } catch (err) {
-        return [];
+      const stockDataFile = 'registered_users.json';
+      const phoneDataFile = 'phone_data.json';
+      const buyingFile = 'buying.json';
+      
+      function loadStockData() {
+        try {
+          const data = fs.readFileSync(stockDataFile, 'utf8');
+          return JSON.parse(data);
+        } catch (err) {
+          return [];
+        }
       }
-    }
-    
-    function saveBuyingData(data) {
-      fs.writeFileSync(buyingFile, JSON.stringify(data, null, 2));
-    }
-    
-    function buyItem(command, phoneNumber) {
-      const [_, id, quantity] = command.match(/\.buy\s+(\d+)\s+(\d+)/);
-    
-      const stockData = loadStockData();
-      const phoneData = loadPhoneData();
-    
-      const itemIndex = stockData.findIndex((item) => item.id === parseInt(id, 10));
-    
-      if (itemIndex === -1) {
-        console.log(`Item with ID ${id} not found.`);
-        return;
+      
+      function loadPhoneData() {
+        try {
+          const data = fs.readFileSync(phoneDataFile, 'utf8');
+          return JSON.parse(data);
+        } catch (err) {
+          return [];
+        }
       }
-    
-      const item = stockData[itemIndex];
-    
-      if (item.stock < parseInt(quantity, 10)) {
-        console.log(`Not enough stock for item with ID ${id}.`);
-        msg.reply(`Not enough stock for item with ID ${id}.`)
-        return;
+      
+      function saveBuyingData(data) {
+        fs.writeFileSync(buyingFile, JSON.stringify(data, null, 2));
       }
-    
-      const totalCost = item.price * parseInt(quantity, 10);
-      const phoneIndex = phoneData.findIndex((entry) => entry.phoneNumber === phoneNumber);
-    
-      if (phoneIndex === -1) {
-        console.log(`Phone number ${phoneNumber} not found.`);
-        return;
+      
+      function buyItem(command, phoneNumber) {
+        const [_, id, quantity] = command.match(/\.buy\s+(\d+)\s+(\d+)/);
+      
+        const stockData = loadStockData();
+        const phoneData = loadPhoneData();
+      
+        const itemIndex = stockData.findIndex((item) => item.id === parseInt(id, 10));
+      
+        if (itemIndex === -1) {
+          console.log(`Item with ID ${id} not found.`);
+          return;
+        }
+      
+        const item = stockData[itemIndex];
+      
+        if (item.stock < parseInt(quantity, 10)) {
+          console.log(`Not enough stock for item with ID ${id}.`);
+          msg.reply(`Not enough stock for item with ID ${id}.`);
+          return;
+        }
+      
+        const totalCost = item.price * parseInt(quantity, 10);
+        const phoneIndex = phoneData.findIndex((entry) => entry.phoneNumber === phoneNumber);
+      
+        if (phoneIndex === -1) {
+          console.log(`Phone number ${phoneNumber} not found.`);
+          return;
+        }
+      
+        const phone = phoneData[phoneIndex];
+      
+        if (phone.balance < totalCost) {
+          console.log(`Not enough balance for phone number ${phoneNumber}.`);
+          msg.reply("Not enough balance");
+          return;
+        }
+      
+        // Update the stock quantity
+        stockData[itemIndex].stock -= parseInt(quantity, 10);
+        saveStockData(stockData);
+      
+        // Update the phone balance
+        phoneData[phoneIndex].balance -= totalCost;
+        savePhoneData(phoneData);
+      
+        const itemId = generateRandomId(); // Generate a random 5-digit ID
+        const purchaseData = {
+          date: new Date().toISOString(),
+          phoneNumber,
+          item: {
+            id: itemId, // Use the generated random ID for the purchased item
+            ram: item.ram,
+            core: item.core,
+            duration: item.duration,
+            price: item.price,
+            stock: parseInt(quantity, 10),
+          },
+          totalCost,
+          status: 'pending'
+        };
+      
+        // Append the purchase data to buying.json
+        const buyingData = loadBuyingData();
+        buyingData.push(purchaseData);
+        saveBuyingData(buyingData);
+      
+        console.log(`Purchase completed successfully.`);
+        msg.reply(`you have successfully bought Order no: *${itemId}*\n You can check status by *.status ${itemId}*`);
       }
-    
-      const phone = phoneData[phoneIndex];
-    
-      if (phone.balance < totalCost) {
-        console.log(`Not enough balance for phone number ${phoneNumber}.`);
-        msg.reply("Not enough balance")
-        return;
+      
+      function loadBuyingData() {
+        try {
+          const data = fs.readFileSync(buyingFile, 'utf8');
+          return JSON.parse(data);
+        } catch (err) {
+          return [];
+        }
       }
-    
-      // Update the stock quantity
-      stockData[itemIndex].stock -= parseInt(quantity, 10);
-      saveStockData(stockData);
-    
-      // Update the phone balance
-      phoneData[phoneIndex].balance -= totalCost;
-      savePhoneData(phoneData);
-    
-      const purchaseData = {
-        date: new Date().toISOString(),
-        phoneNumber,
-        item,
-        quantity: parseInt(quantity, 10),
-        totalCost,
-        status: 'pending'
-      };
-    
-      // Append the purchase data to buying.json
-      const buyingData = loadBuyingData();
-      buyingData.push(purchaseData);
-      saveBuyingData(buyingData);
-    
-      console.log(`Purchase completed successfully.`);
-      msg.reply(`you have successfully bought Item no: *${id}*\n You can check status by *.status id*`)
-    }
-    
-    function loadBuyingData() {
-      try {
-        const data = fs.readFileSync(buyingFile, 'utf8');
-        return JSON.parse(data);
-      } catch (err) {
-        return [];
+      
+      function saveStockData(data) {
+        fs.writeFileSync(stockDataFile, JSON.stringify(data, null, 2));
       }
-    }
-    
-    function saveStockData(data) {
-      fs.writeFileSync(stockDataFile, JSON.stringify(data, null, 2));
-    }
-    
-    function savePhoneData(data) {
-      fs.writeFileSync(phoneDataFile, JSON.stringify(data, null, 2));
-    }
-    
-    // Example usage with command = '.buy 319032 2' and phoneNumber = '923496985307':
-    buyItem(give, phoneNumber);
-  
-    } else {
-    console.log("Phone number not found.");
-        } 
-    
-  }
+      
+      function savePhoneData(data) {
+        fs.writeFileSync(phoneDataFile, JSON.stringify(data, null, 2));
+      }
+      
+     
+      
+      if (msg.body.startsWith('.buy')) {
+        const give = msg.body;
+        const senderNumber = msg.from;
+        const input = senderNumber;
+        const phoneNumberRegex = /(\d+)/;
+        const match = input.match(phoneNumberRegex);
+        if (match && match[1]) {
+          const phoneNumber = match[1];
+          console.log("Phone Number:", phoneNumber);
+          buyItem(give, phoneNumber);
+        } else {
+          console.log("Phone number not found.");
+        }
+      }
+      
 
 
 
